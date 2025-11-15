@@ -22,16 +22,27 @@
 
         /* Welcome Screen Styles */
         .welcome-screen {
-            position: relative;
+            position: fixed;
+            top: 0;
+            left: 0;
             width: 100%;
             height: 100vh;
-            min-height: 100vh;
             background: linear-gradient(135deg, #75c281 0%, #5aa569 100%);
             display: flex;
             flex-direction: column;
             justify-content: center;
             align-items: center;
-            z-index: 10;
+            z-index: 1000;
+            transition: opacity 0.8s ease, transform 0.8s ease;
+        }
+
+        .welcome-screen.fade-out {
+            opacity: 0;
+            transform: translateY(-100%);
+        }
+
+        .welcome-screen.hidden {
+            display: none;
         }
 
         .welcome-text {
@@ -65,15 +76,33 @@
 
         /* Video Screen Styles */
         .video-screen {
-            position: relative;
+            position: fixed;
+            top: 0;
+            left: 0;
             width: 100%;
             height: 100vh;
-            min-height: 100vh;
             background-color: #000;
             display: flex;
             justify-content: center;
             align-items: center;
-            z-index: 10;
+            z-index: 999;
+            opacity: 0;
+            pointer-events: none;
+            transition: opacity 0.8s ease, transform 0.8s ease;
+        }
+
+        .video-screen.show {
+            opacity: 1;
+            pointer-events: auto;
+        }
+
+        .video-screen.fade-out {
+            opacity: 0;
+            transform: translateY(-100%);
+        }
+
+        .video-screen.hidden {
+            display: none;
         }
 
         .video-container {
@@ -121,23 +150,18 @@
         .main-content {
             position: relative;
             z-index: 5;
-            min-height: 100vh;
+            opacity: 0;
+            transition: opacity 0.8s ease 0.5s;
+        }
+
+        .main-content.show {
+            opacity: 1;
         }
 
         body {
             display: flex;
             flex-direction: column;
             scroll-behavior: smooth;
-            scroll-snap-type: y mandatory;
-            overflow-y: scroll;
-            height: 100vh;
-        }
-
-        .welcome-screen,
-        .video-screen,
-        .main-content {
-            scroll-snap-align: start;
-            scroll-snap-stop: always;
         }
 
         nav {
@@ -482,54 +506,44 @@
         const introVideo = document.getElementById('introVideo');
         const skipButton = document.getElementById('skipButton');
 
-        // Auto-scroll to video after welcome screen
+        let introComplete = false;
+
+        // Step 1: Hide welcome screen after 2 seconds and show video
         setTimeout(() => {
-            videoScreen.scrollIntoView({ behavior: 'smooth', block: 'start' });
+            welcomeScreen.classList.add('fade-out');
             setTimeout(() => {
+                welcomeScreen.classList.add('hidden');
+                videoScreen.classList.add('show');
                 introVideo.play();
             }, 800);
         }, 2000);
 
-        // When video ends, auto-scroll to main content
+        // Step 2: When video ends, wait 3 seconds then show main content
         introVideo.addEventListener('ended', () => {
             setTimeout(() => {
-                mainContent.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                showMainContent();
             }, 3000);
         });
 
-        // Skip button scrolls to main content
+        // Skip button functionality
         skipButton.addEventListener('click', () => {
-            mainContent.scrollIntoView({ behavior: 'smooth', block: 'start' });
+            showMainContent();
         });
 
-        // Observer to replay video when scrolling back to it
-        const videoObserver = new IntersectionObserver((entries) => {
-            entries.forEach(entry => {
-                if (entry.isIntersecting && entry.intersectionRatio > 0.8) {
-                    introVideo.currentTime = 0;
-                    introVideo.play();
-                }
-            });
-        }, {
-            threshold: [0.8]
-        });
+        // Function to show main content and remove intro screens
+        function showMainContent() {
+            if (introComplete) return;
+            introComplete = true;
 
-        videoObserver.observe(videoScreen);
+            videoScreen.classList.add('fade-out');
+            mainContent.classList.add('show');
 
-        // Smooth scroll snap behavior
-        let isScrolling = false;
-        let scrollTimer;
-
-        window.addEventListener('scroll', () => {
-            if (!isScrolling) {
-                isScrolling = true;
-            }
-
-            clearTimeout(scrollTimer);
-            scrollTimer = setTimeout(() => {
-                isScrolling = false;
-            }, 150);
-        });
+            // Remove welcome and video screens from DOM after animation
+            setTimeout(() => {
+                welcomeScreen.remove();
+                videoScreen.remove();
+            }, 1000);
+        }
     </script>
 </body>
 </html>
